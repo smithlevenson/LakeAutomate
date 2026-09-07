@@ -6,7 +6,7 @@
 - Gateway/router: `10.2.0.1`
 - DNS: currently `10.2.0.1`
 - DHCP: currently provided by Orbi
-- DHCP pool: `10.2.0.120` through `10.2.0.254`
+- DHCP pool: currently `10.2.0.120` through `10.2.0.254`
 - Internet: Starlink
 - Upstream NAT: Starlink CGNAT
 - LEVLAKE-EDGE Ethernet profile: Private
@@ -26,27 +26,37 @@ The public IPv4 observed during baseline work was `74.244.55.241`, but inbound a
 
 ### Orbi
 
-Three-node Orbi system:
+Three-node Orbi system today:
 
 - one router/AP
 - two satellites
 - all three provide Wi-Fi
-- both satellites use **wired backhaul** through the TP-Link switch
+- both satellites use wired backhaul through the TP-Link switch
 
 Current addresses / MACs:
 
-- `10.2.0.1` — Orbi router — `38:94:ED:AC:FF:3A`
+- `10.2.0.1` — Orbi router today; future USG gateway — `38:94:ED:AC:FF:3A`
 - `10.2.0.2` — Orbi satellite — `38:94:ED:B2:D2:7B`
 - `10.2.0.3` — Orbi satellite — `38:94:ED:B2:F1:89`
 
-Do not interpret Orbi UI drawings as proof of wireless daisy-chain; physical topology was confirmed by the user as both satellites wired through the switch.
+Future plan:
+
+- current Orbi router becomes AP at `10.2.0.4`
+- existing satellites remain `.2` and `.3`
+- `.5` remains available for another Orbi if useful
+
+Do not interpret Orbi UI drawings as proof of wireless daisy-chain; physical topology was confirmed as wired through the switch.
 
 ### Switch
 
 - TP-Link TL-SG108PE
+- reserved at `10.2.0.8`
 - 8-port Easy Smart PoE switch
-- carries wired backhaul for both Orbi satellites
+- supports 802.1Q VLAN/PVID configuration
+- carries wired backhaul for the Orbi satellites
 - remains useful after the eventual USG migration
+
+Do not configure VLANs until physical switch ports are mapped and the USG cutover is ready.
 
 ### LEVLAKE-EDGE
 
@@ -58,80 +68,105 @@ Do not interpret Orbi UI drawings as proof of wireless daisy-chain; physical top
 - Tailscale: `100.123.190.89`
 - Ethernet profile: Private
 - RDP: available on TCP 3389 and verified before interactive login
+- current Tailscale subnet router for `10.2.0.0/24`
 
-## Known reservations
+## Intentional reservations
 
-- `10.2.0.2` — Orbi satellite
-- `10.2.0.3` — Orbi satellite
-- `10.2.0.15` — ISY994i
-- `10.2.0.50` — LG webOS TV
-- `10.2.0.51` — LG webOS TV
-- `10.2.0.100` — LEVLAKE-EDGE
+```text
+10.2.0.1    gateway today (Orbi); future USG
+10.2.0.2    Orbi satellite
+10.2.0.3    Orbi satellite
+10.2.0.4    future Orbi AP address for today's Orbi router
+10.2.0.5    reserved for possible additional Orbi
+10.2.0.8    TP-Link TL-SG108PE
+10.2.0.10   lake-core (reserved; hardware TBD)
+10.2.0.11   Home Assistant VM
+10.2.0.15   ISY994i
+10.2.0.20   Phyn water device
+10.2.0.21   YoLink hub
+10.2.0.50   LG webOS TV
+10.2.0.51   LG webOS TV
+10.2.0.52   DirecTV
+10.2.0.53   Roku (Master; legacy hostname LAKEDEN)
+10.2.0.60   Drive camera
+10.2.0.61   Garage IP camera / viewer on port 80
+10.2.0.100  LEVLAKE-EDGE
+```
 
-A useful addressing convention to preserve:
+Addressing convention:
 
 ```text
 10.2.0.1         gateway
 10.2.0.2-.9      network infrastructure
 10.2.0.10-.29    controllers / automation
-10.2.0.30-.99    fixed smart-home devices
-10.2.0.100-.119  servers / edge systems
+10.2.0.30-.49    reserved/future fixed devices
+10.2.0.50-.59    media / TVs
+10.2.0.60-.79    cameras
+10.2.0.80-.99    future fixed appliances
+10.2.0.100-.119  computers / edge systems
 10.2.0.120+      dynamic DHCP
 ```
 
-## Current / likely device integration candidates
+Preserve `10.2.0.0/24` through the USG migration.
 
-Inventory work on the old subnet identified several useful future LakeAutomate targets:
+## Device notes
 
-- ISY994i
-- LG webOS TVs
-- Roku
-- Phyn water device
-- cameras
-- Orbi / future UniFi infrastructure
-- TP-Link switch status where useful
-- future Shelly plugs
-
-There was also an old client previously observed at `192.168.2.60`, supporting the recollection that an older Lake subnet once used `192.168.2.x`. Do not reuse old historical addressing merely because a legacy client still has it.
+- YoLink hub (`10.2.0.21`) currently supports sensors on the hot tub and refrigerator; expansion is expected. It may move to an IoT VLAN later after its Home Assistant/integration path is verified.
+- Phyn (`10.2.0.20`) may need a like-for-like replacement; verify the exact replacement path before depending on it for new logic.
+- Garage IP camera is `10.2.0.61`, with its local viewer on port 80.
+- Home Assistant is `10.2.0.11` and currently listens on port 80.
 
 ## Historical subnet collision
 
-The Lake initially used `192.168.1.0/24`, overlapping Home.
+The Lake initially used `192.168.1.0/24`, overlapping Home. Home also advertised `192.168.1.0/24` through Tailscale via TrueNAS.
 
-Home also advertised `192.168.1.0/24` through Tailscale. Windows on LEVLAKE-EDGE preferred the Tailscale route:
+A traceroute to `192.168.1.1` from the Lake proved traffic was being sent to the Home UCG Ultra through the Tailscale subnet router instead of to the local Orbi.
 
-```text
-Tailscale  192.168.1.0/24  via 100.100.100.100
-Ethernet   192.168.1.0/24  on-link
-```
+The move to `10.2.0.0/24` resolved the overlap. Unique site subnets are a hard architectural rule.
 
-A traceroute to `192.168.1.1` proved the collision:
+## Tailscale routing and DNS
 
-```text
-LEVLAKE-EDGE
-  -> 100.104.90.47   Home TrueNAS / Tailscale subnet router
-  -> 192.168.1.1     Home UCG Ultra
-```
-
-This could make the same IP refer to the wrong physical device and was therefore unacceptable for automation.
-
-The current `10.2.0.0/24` Lake subnet resolves the overlap. Preserve unique site subnets as a hard architectural rule.
-
-## Tailscale policy
-
-During the old `192.168.1.0/24` collision, route acceptance was deliberately disabled on Lake machines:
+LEVLAKE-EDGE now advertises:
 
 ```text
-tailscale up --accept-routes=false --unattended
+10.2.0.0/24
 ```
 
-The collision no longer exists after the move to `10.2.0.0/24`. Route acceptance can be reconsidered later if there is a real need, but should not be changed casually.
+The route is approved in the Tailscale admin console. Windows IPv4 forwarding is enabled on:
 
-Tailscale is the remote access/control path. Do not depend on public inbound forwarding.
+```text
+Tailscale
+vEthernet (Lake LAN)
+```
+
+Remote clients have successfully reached Lake services through this route, including Home Assistant, the TP-Link switch, and camera web interfaces.
+
+LEVLAKE-EDGE also accepts the Home subnet route, so Home `192.168.1.0/24` resources remain reachable from the Lake through Tailscale.
+
+Home split DNS is already configured in Tailscale:
+
+```text
+home -> 192.168.1.12
+```
+
+Once Lake AdGuard is deployed on `lake-core`, add:
+
+```text
+lake -> 10.2.0.10
+```
+
+Expected future names include:
+
+```text
+ha.lake
+edge.lake
+isy.lake
+switch.lake
+```
+
+Do not enable broad/global DNS override merely to support these names; use split DNS.
 
 ## Planned network migration
-
-Bring the old UniFi USG to the Lake and make it the authoritative router/firewall/DHCP device while keeping the current subnet.
 
 Target topology:
 
@@ -140,41 +175,40 @@ Starlink
    |
 UniFi USG (10.2.0.1)
    |
-TL-SG108PE
-   |-- Orbi primary in AP mode
-   |-- Orbi satellite 1
-   |-- Orbi satellite 2
-   |-- lake-core
-   `-- LEVLAKE-EDGE
+TL-SG108PE (10.2.0.8)
+   |-- Orbi APs
+   |-- lake-core (10.2.0.10)
+   `-- LEVLAKE-EDGE (10.2.0.100)
 ```
 
 Migration principles:
 
 - preserve `10.2.0.0/24`
-- preserve important reservations
-- put Orbis into AP mode
+- preserve intentional reservations
 - make USG the only local router/firewall/DHCP authority
-- verify Starlink, DNS, DHCP, Tailscale, Blue Iris, and all fixed devices after cutover
-- identify exact USG model/firmware and choose a compatible UniFi Network version intentionally
+- put Orbis into AP mode
+- map switch ports before VLAN changes
+- verify Starlink, DNS, DHCP, Tailscale, Home Assistant, Blue Iris, and fixed devices after cutover
+- identify exact USG model/firmware and compatible UniFi Network version intentionally
 
-A local UniFi Network controller is required for the legacy USG. It may run on `lake-core` or on LEVLAKE-EDGE.
+A local UniFi Network controller is required for the legacy USG. It may run on `lake-core` or LEVLAKE-EDGE.
 
 ## Planned local services
 
-- AdGuard Home for local DNS and rewrites
-- Mosquitto for MQTT
-- Caddy for friendly local HTTPS/service names
-- Dockge for container management
+`lake-core` is reserved at `10.2.0.10` for boring always-on infrastructure:
+
+- AdGuard Home
+- Mosquitto
+- Caddy
+- Dockge
 - UniFi Network controller
-- optional Uptime Kuma after essentials are stable
+- optional Uptime Kuma
 
-Application code should prefer hostnames/local DNS over hard-coded IP addresses once AdGuard is deployed.
-
-Potential names such as `lake-core`, `edge.home`, `mqtt.home`, `adguard.home`, and `dockge.home` were discussed but are **not yet final naming decisions**.
+Application code should prefer `.lake` DNS names over hard-coded IP addresses once AdGuard is deployed.
 
 ## Baseline capture
 
-`scripts/Get-LakeNetworkBaseline.ps1` captures the repeatable raw network state including adapters, IP configuration, DNS, routes, neighbors, Wi-Fi, Tailscale, listening ports, services, network profile, Internet test, and gateway test.
+`scripts/Get-LakeNetworkBaseline.ps1` captures repeatable raw network state including adapters, IP configuration, DNS, routes, neighbors, Wi-Fi, Tailscale, listening ports, services, network profile, Internet test, and gateway test.
 
 Generated files:
 
