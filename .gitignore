@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+
+# Logs / runtime
+logs/
+*.log
+*.pid
+
+# Secrets
+secrets/
+*.secret
+*.key
+
+# Local Blue Iris exports / credentials
+blueiris-export/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local network captures may contain environment-specific information
+# Commit curated documentation; keep raw captures local unless intentionally added.
+docs/network/baseline-*.txt
