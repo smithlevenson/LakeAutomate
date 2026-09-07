@@ -26,7 +26,7 @@ Reason: the previous Lake `192.168.1.0/24` network collided with Home and was de
 
 ## 4. Use Tailscale, not public port forwarding
 
-**Decision:** Remote management and Blue Iris remote access should use Tailscale.
+**Decision:** Remote management and local service access should use Tailscale.
 
 Reason: Starlink is behind CGNAT and there is no benefit to exposing local services publicly.
 
@@ -90,7 +90,7 @@ Current-state topics should generally be retained. LevLake should consume normal
 
 **Decision:** Device/API credentials must not be committed.
 
-The Blue Iris integration already follows this rule. The next step is unattended-safe local credential storage on LEVLAKE-EDGE.
+Blue Iris and Home Assistant integrations follow this rule. Unattended services should load secrets from host-local protected configuration or environment, not source files.
 
 ## 15. Native Windows UPS handling is sufficient for now
 
@@ -102,7 +102,7 @@ Current policy is 15% low warning, 8% critical shutdown, 4% reserve.
 
 **Decision:** New critical services are not considered complete until their startup/recovery path is proven without an interactive login where appropriate.
 
-LEVLAKE-EDGE has already passed reboot, pre-login networking, Blue Iris, UPS/laptop-battery handoff, AC restore, and BIOS power-on-by-AC tests.
+LEVLAKE-EDGE has already passed reboot, pre-login networking, Blue Iris, UPS/laptop-battery handoff, AC restore, BIOS power-on-by-AC, and Home Assistant VM auto-start tests.
 
 ## 17. Hard power cycles require local completion
 
@@ -113,3 +113,50 @@ Never design a power-cycle operation that kills the very network path required t
 ## 18. Prefer names over addresses once local DNS exists
 
 **Decision:** IP reservations provide stability now, but application code should eventually use local DNS names managed through AdGuard/rewrite infrastructure rather than hard-coded addresses.
+
+## 19. Home Assistant is the normalized device/state layer
+
+**Decision:** Home Assistant sits between LakeAutomate and device-specific integrations when a solid HA integration exists.
+
+Target boundary:
+
+```text
+LevLake -> LakeAutomate -> Home Assistant -> device bridge/integration -> physical device
+```
+
+Reason: Home Assistant already normalizes device state, service calls, discovery, and protocol-specific integrations. LakeAutomate should not recreate that ecosystem.
+
+## 20. ISY becomes a legacy device bridge, not the long-term logic home
+
+**Decision:** Keep the ISY994i in service as the Insteon/device bridge while gradually migrating automation logic away from the Java Admin Console.
+
+Simple local automations can move to Home Assistant; Levenson-specific cross-system orchestration belongs in LakeAutomate. Migration should be deliberate and side-by-side, not a big-bang rewrite.
+
+## 21. LEVLAKE-EDGE is the current Lake Tailscale subnet router
+
+**Decision:** LEVLAKE-EDGE advertises `10.2.0.0/24` into Tailscale and forwards traffic between Tailscale and `vEthernet (Lake LAN)`.
+
+This provides private remote access to Lake services such as Home Assistant without public Starlink port forwarding.
+
+## 22. LakeAutomate exposes a small authenticated API, not raw Home Assistant passthrough
+
+**Decision:** LakeAutomate may expose health/state and explicitly supported high-level control endpoints over Tailscale. Mutating/control endpoints require LakeAutomate authentication.
+
+Do not expose arbitrary Home Assistant service passthrough to LevLake. The public-facing application should request curated actions with bounded behavior.
+
+## 23. Home Assistant Core is temporarily pinned
+
+**Decision:** Keep Home Assistant Core on `2026.8.0` until the observed `2026.9.1` startup failure involving `probatio.BuildPolicy` has been rechecked/resolved.
+
+HAOS and Supervisor may remain current as long as compatibility is verified.
+
+## 24. Reserve `lake-core` at `10.2.0.10` and use `.lake` split DNS later
+
+**Decision:** `10.2.0.10` is reserved for the future `lake-core` infrastructure host. When Lake AdGuard exists, Tailscale split DNS should route the `lake` namespace to it.
+
+Expected model:
+
+```text
+home -> Home AdGuard at 192.168.1.12
+lake -> Lake AdGuard at 10.2.0.10
+```
