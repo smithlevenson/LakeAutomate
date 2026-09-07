@@ -27,8 +27,11 @@
 - [x] Stand up the initial FastAPI LakeAutomate runtime on port `8780`.
 - [x] Prove `/health` remotely over Tailscale.
 - [x] Prove LakeAutomate -> Home Assistant entity-state reads.
-- [x] Add authenticated constrained Home Assistant light-control support to the repo.
-- [x] Add unattended LakeAutomate startup scripts to the repo.
+- [x] Add authenticated constrained Home Assistant light-control support.
+- [x] Verify authenticated LakeAutomate -> Home Assistant -> ISY physical light control in both directions (`turn_on` / `turn_off`).
+- [x] Store `LAKE_HA_URL`, `LAKE_HA_TOKEN`, and `LAKE_API_KEY` as machine-level environment variables outside Git for unattended runtime use.
+- [x] Install and verify the `LakeAutomate API` Windows Scheduled Task under `SYSTEM`.
+- [x] Stop the manually launched Uvicorn process and confirm the Scheduled Task independently restores the listener on TCP `8780` and serves `/health`.
 
 See `docs/homeassistant.md`.
 
@@ -36,7 +39,6 @@ See `docs/homeassistant.md`.
 
 ### 1. Home Assistant -> LakeAutomate integration
 
-- [ ] Exercise and harden the authenticated LakeAutomate control endpoint.
 - [ ] Add reusable Home Assistant state/service helpers rather than ad-hoc device calls.
 - [ ] Add health/error normalization for Home Assistant connectivity.
 - [ ] Decide which Home Assistant states should become first-class LakeAutomate semantic state.
@@ -52,11 +54,9 @@ See `docs/homeassistant.md`.
 
 ### 3. LakeAutomate service hardening
 
-- [ ] Store `LAKE_HA_TOKEN` and `LAKE_API_KEY` as unattended machine-level secrets without committing them.
-- [ ] Install/verify the `LakeAutomate API` startup task on LEVLAKE-EDGE.
 - [ ] Reboot-test LakeAutomate API recovery without interactive login.
 - [ ] Add a local service/heartbeat log and basic failure diagnostics.
-- [ ] Restrict control surfaces to high-level, explicitly supported actions rather than arbitrary Home Assistant service passthrough.
+- [ ] Restrict future control surfaces to high-level, explicitly supported actions rather than arbitrary Home Assistant service passthrough.
 
 ## ISY migration — later, deliberately
 
