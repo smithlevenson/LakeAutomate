@@ -2,55 +2,85 @@
 
 ## Completed foundation
 
-- [x] Create GitHub repository `smithlevenson/LakeAutomate`.
-- [x] Install Git on LEVLAKE-EDGE and connect `C:\Projects\LakeAutomate` to `origin/main`.
-- [x] Establish repeatable lake network baseline capture script.
-- [x] Move Lake LAN to unique `10.2.0.0/24` subnet and eliminate Home/Lake Tailscale subnet collision.
-- [x] Reserve LEVLAKE-EDGE at `10.2.0.100`.
-- [x] Set LEVLAKE-EDGE Ethernet profile to Private.
-- [x] Confirm Starlink CGNAT and choose Tailscale instead of public inbound forwarding.
-- [x] Install and license-pin Blue Iris `5.9.4.11`.
-- [x] Run Blue Iris as an automatic Session-0 Windows service.
-- [x] Verify Blue Iris records before login.
-- [x] Verify Tailscale and RDP return before login.
-- [x] Verify UPS handoff and laptop battery handoff.
-- [x] Enable and test BIOS Power on by AC.
-- [x] Enable Wake on LAN.
-- [x] Verify cold power restore -> Windows -> Tailscale -> Blue Iris without login.
-- [x] Configure native Windows APC UPS battery policy: 15% low warning, 8% critical shutdown, 4% reserve.
-- [x] Configure Blue Iris motion/trigger recording direction and modest ~50-56 GB storage allocation.
-- [x] Test Blue Iris JSON authentication and `status` API on 5.9.4.11.
-- [x] Confirm Blue Iris API exposes CPU, GPU, RAM, storage, uptime, alerts, warnings, profile, and schedule.
-- [x] Implement and test `scripts/Get-BlueIrisStatus.ps1` normalized JSON output.
+- [x] Create GitHub repository `smithlevenson/LakeAutomate` and deploy it to `C:\Projects\LakeAutomate` on LEVLAKE-EDGE.
+- [x] Establish repeatable lake network baseline capture.
+- [x] Move the Lake LAN to unique `10.2.0.0/24` and eliminate the Home/Lake Tailscale collision.
+- [x] Confirm Starlink CGNAT and standardize on Tailscale instead of public inbound forwarding.
+- [x] Install/license-pin Blue Iris `5.9.4.11`, run it as an automatic Session-0 service, and verify pre-login recording.
+- [x] Test Blue Iris JSON authentication/status and implement `scripts/Get-BlueIrisStatus.ps1` normalized telemetry.
+- [x] Verify UPS/laptop-battery handoff, BIOS Power on by AC, Wake on LAN, Tailscale/RDP pre-login, and cold recovery.
+- [x] Clean up the Lake DHCP reservation plan and move important devices into intentional address blocks.
 
-## Immediate trip closeout
+## 2026-09-07 Home Assistant / remote-control milestone
 
-- [ ] Bring the second Wi-Fi camera back online on `10.2.0.0/24`.
-- [ ] Reserve the second camera IP.
-- [ ] Confirm motion-only recording and playback for all intended cameras.
-- [ ] Finish remote Blue Iris phone access over Tailscale.
-- [ ] Export Blue Iris configuration to a safe location outside LEVLAKE-EDGE.
-- [ ] Reconfirm laptop sleep/lid behavior is suitable for unattended appliance duty.
+- [x] Deploy Home Assistant OS 18.2 as a Generation 2 Hyper-V VM on LEVLAKE-EDGE.
+- [x] Reserve Home Assistant at `10.2.0.11`.
+- [x] Configure Hyper-V automatic HA startup with a 30-second delay and graceful shutdown.
+- [x] Pin Home Assistant Core to `2026.8.0` after `2026.9.1` failed startup with a `probatio.BuildPolicy` import error.
+- [x] Configure encrypted weekly Home Assistant backups and store the encryption key separately.
+- [x] Integrate ISY994i (`10.2.0.15`) into Home Assistant.
+- [x] Confirm Home Assistant state reads and physical device control through ISY.
+- [x] Advertise `10.2.0.0/24` through LEVLAKE-EDGE as a Tailscale subnet route.
+- [x] Enable Windows IPv4 forwarding on Tailscale and `vEthernet (Lake LAN)`.
+- [x] Confirm remote Home Assistant access over Tailscale at `10.2.0.11:80`.
+- [x] Install Python 3.13 and create a LakeAutomate virtual environment.
+- [x] Stand up the initial FastAPI LakeAutomate runtime on port `8780`.
+- [x] Prove `/health` remotely over Tailscale.
+- [x] Prove LakeAutomate -> Home Assistant entity-state reads.
+- [x] Add authenticated constrained Home Assistant light-control support to the repo.
+- [x] Add unattended LakeAutomate startup scripts to the repo.
 
-## MQTT / telemetry milestone
+See `docs/homeassistant.md`.
 
-This is the next major LakeAutomate milestone.
+## Current remote-work priorities
 
-- [ ] Select temporary/permanent Mosquitto host.
+### 1. Home Assistant -> LakeAutomate integration
+
+- [ ] Exercise and harden the authenticated LakeAutomate control endpoint.
+- [ ] Add reusable Home Assistant state/service helpers rather than ad-hoc device calls.
+- [ ] Add health/error normalization for Home Assistant connectivity.
+- [ ] Decide which Home Assistant states should become first-class LakeAutomate semantic state.
+- [ ] Add tests for the Home Assistant client and API boundary.
+
+### 2. Home Assistant integration expansion
+
+- [ ] Integrate YoLink hub/sensors.
+- [ ] Investigate Phyn integration/API viability.
+- [ ] Expose useful Blue Iris health/state through Home Assistant only if it adds value beyond the existing direct BI JSON telemetry.
+- [ ] Evaluate Roku / LG webOS / DirecTV integration only where it improves LakeAutomate behavior.
+- [ ] Add Shelly after physical deployment.
+
+### 3. LakeAutomate service hardening
+
+- [ ] Store `LAKE_HA_TOKEN` and `LAKE_API_KEY` as unattended machine-level secrets without committing them.
+- [ ] Install/verify the `LakeAutomate API` startup task on LEVLAKE-EDGE.
+- [ ] Reboot-test LakeAutomate API recovery without interactive login.
+- [ ] Add a local service/heartbeat log and basic failure diagnostics.
+- [ ] Restrict control surfaces to high-level, explicitly supported actions rather than arbitrary Home Assistant service passthrough.
+
+## ISY migration — later, deliberately
+
+The ISY remains the underlying Insteon/device bridge for now. Do not rush the logic migration.
+
+- [ ] Inventory existing ISY programs, scenes, and variables.
+- [ ] Classify low-level Insteon/device mechanics vs house logic.
+- [ ] Move simple local automations to Home Assistant when confidence is high.
+- [ ] Move Levenson-specific cross-system orchestration to LakeAutomate.
+- [ ] Disable ISY programs only after their replacement has been proven side-by-side.
+- [ ] Reduce dependence on the Java ISY Admin Console before its announced end-of-life.
+
+## MQTT / telemetry
+
+Mosquitto remains the intended local state/event bus, preferably on `lake-core`.
+
 - [ ] Deploy Mosquitto locally.
-- [ ] Define MQTT namespace, QoS expectations, retained-state rules, and availability conventions.
-- [ ] Make Blue Iris credentials unattended-safe without storing secrets in Git.
-- [ ] Turn `Get-BlueIrisStatus.ps1` logic into a continuously running or scheduled LakeAutomate publisher.
-- [ ] Poll Blue Iris status approximately every 30-60 seconds.
-- [ ] Publish normalized retained Blue Iris telemetry.
-- [ ] Publish a LakeAutomate/Edge heartbeat/availability topic.
-- [ ] Add camera online/offline state.
-- [ ] Add camera last-motion / recording state where practical.
-- [ ] Add LEVLAKE-EDGE CPU/RAM/system telemetry.
-- [ ] Add APC UPS and laptop battery telemetry.
-- [ ] Add Internet/network health telemetry.
+- [ ] Define retained-state, availability, QoS, and namespace conventions.
+- [ ] Publish normalized Blue Iris telemetry.
+- [ ] Publish LakeAutomate/Edge heartbeat and host telemetry.
+- [ ] Add UPS/battery and Internet/network health telemetry.
+- [ ] Add camera online/last-motion/recording state where useful.
 
-Initial topic direction:
+Initial semantic namespace remains:
 
 ```text
 lake/blueiris/health
@@ -72,88 +102,53 @@ lake/edge/ups
 lake/network/internet
 ```
 
-Current-value topics should normally be retained.
-
 ## Device registry
 
-- [ ] Create first-class device registry rather than hard-coding addresses in integrations.
-- [ ] Separate categories such as network, cameras, climate, lighting, entertainment, and utilities.
+- [ ] Create a first-class device registry rather than scattering addresses through integrations.
+- [ ] Separate network, cameras, climate, lighting, entertainment, and utilities.
 - [ ] Include identity, room, hostname, IP, MAC, vendor/model, protocol, control/status methods, and notes.
-- [ ] Prefer local DNS names over IP literals after AdGuard is deployed.
+- [ ] Prefer local DNS names after Lake AdGuard is deployed.
 
-Initial likely integrations:
+## Next physical/infrastructure trip
 
-- [ ] ISY994i
-- [ ] Phyn water device
-- [ ] Roku
-- [ ] LG webOS TVs
-- [ ] cameras / Blue Iris camera health
-- [ ] Shelly recovery plugs
-- [ ] network infrastructure health
+### lake-core / DNS
 
-## Core infrastructure
-
-- [ ] Inventory old/reusable PCs, laptops, thin clients, Pi hardware, and mini PCs before purchasing anything.
-- [ ] Select/reuse hardware for `lake-core`.
+- [ ] Select/reuse hardware for `lake-core` at reserved `10.2.0.10`.
 - [ ] Deploy AdGuard Home.
-- [ ] Establish local DNS naming and rewrites.
-- [ ] Deploy Caddy.
-- [ ] Deploy Dockge.
-- [ ] Deploy UniFi Network controller where appropriate.
+- [ ] Add Tailscale split DNS `lake -> 10.2.0.10`.
+- [ ] Establish `.lake` names such as `ha.lake`, `edge.lake`, `isy.lake`, and `switch.lake`.
+- [ ] Deploy Mosquitto, Caddy, Dockge, and UniFi Network controller as appropriate.
 - [ ] Consider Uptime Kuma after the essential stack is stable.
 
-`lake-core` is intended to be boring always-on infrastructure. The separate Lake TV/Arcade machine should be sized for Moonlight/local gaming rather than being sacrificed to infrastructure duty.
+### Network migration
 
-## Network migration
+- [ ] Bring the UniFi USG to the Lake.
+- [ ] Preserve `10.2.0.0/24`.
+- [ ] Configure USG as future `10.2.0.1` gateway/firewall/DHCP authority.
+- [ ] Put the current Orbi router into AP mode at `10.2.0.4`; keep existing satellites at `.2` and `.3`.
+- [ ] Keep `.5` available for another Orbi if useful.
+- [ ] Map TP-Link TL-SG108PE physical ports before VLAN changes.
+- [ ] Move suitable devices to IoT VLANs only after integration paths are verified.
 
-- [ ] Bring UniFi USG to the Lake.
-- [ ] Verify exact USG model, firmware, and compatible UniFi Network version.
-- [ ] Document/export current Orbi configuration.
-- [ ] Preserve Lake subnet `10.2.0.0/24`.
-- [ ] Configure USG as `10.2.0.1` router/firewall/DHCP authority.
-- [ ] Put Orbi system into AP mode.
-- [ ] Preserve reservations for infrastructure/controllers.
-- [ ] Verify Starlink, DNS, DHCP, Tailscale, Blue Iris, and all fixed devices after cutover.
-- [ ] Consider Starlink bypass mode as part of the cutover; do not expect it to remove Starlink CGNAT.
+### Remote hard recovery
 
-## Remote recovery
-
-- [ ] Bring 3-4 Shelly Plug US Gen4 units or equivalent local-control plugs to Lake.
-- [ ] Prioritize recovery for Starlink, Orbi/AP infrastructure, and flaky cameras/devices.
-- [ ] Require local/timed OFF -> delay -> ON behavior so a recovery command cannot strand the network.
-- [ ] Avoid indiscriminate remote power cycling of the main switch.
-- [ ] Treat LEVLAKE-EDGE charger cycling as last-resort recovery, not the normal reboot path.
-- [ ] Add safe high-level LakeAutomate recovery actions only after each local power-cycle behavior is proven.
-
-Possible future actions:
-
-```text
-Restart Starlink
-Restart Orbi Wi-Fi
-Restart Camera 1
-Restart Camera 2
-Power-cycle TV
-```
+- [ ] Bring Shelly Plug US Gen4 units for selective local-completing power-cycle recovery.
+- [ ] Prioritize Starlink, Orbi/AP infrastructure, and flaky cameras/devices.
+- [ ] Require OFF -> delay -> ON to complete locally after one command.
+- [ ] Treat LEVLAKE-EDGE charger cycling as last-resort recovery; the laptop battery means AC removal alone is not a reboot.
 
 ## LevLake integration
 
-- [ ] Define the data boundary between LakeAutomate and LevLake.
-- [ ] Feed curated semantic state into LevLake rather than raw device payloads.
-- [ ] Create family-friendly lake health cards, e.g. camera health, Internet, UPS, temperature, occupancy.
+- [ ] Define the curated semantic state contract from LakeAutomate to LevLake.
+- [ ] Feed family-friendly state rather than raw Home Assistant/device payloads.
 - [ ] Define high-level requested actions that LevLake may ask LakeAutomate to perform.
-
-Example future camera card:
-
-```text
-Cameras — Healthy
-2/2 online · DVR 5% CPU · 4% GPU · 348 MB · 1% storage
-```
+- [ ] Keep credentials and device-specific protocol logic out of LevLake.
 
 ## Future automations
 
 - [ ] Arrival / Departure / Occupied / Unoccupied state model.
 - [ ] HVAC setback and recovery.
-- [ ] Freeze-protection automation.
+- [ ] Freeze protection.
 - [ ] Lighting scenes.
 - [ ] Water/Phyn monitoring and alerts.
 - [ ] Media/TV integrations.
@@ -162,8 +157,7 @@ Cameras — Healthy
 
 ## Lake Arcade / TV architecture
 
-- [ ] Inventory reusable hardware first.
-- [ ] Keep LEVLAKE-EDGE in the office/network location unless there is a compelling reason to move it.
-- [ ] Decide Arcade host vs Moonlight client vs local gaming/emulation roles.
+- [ ] Keep LEVLAKE-EDGE in the office/network role unless a compelling reason emerges.
 - [ ] Treat the lake equivalent of `ssl-minipc` as a real interactive/gaming endpoint, not a starved utility box.
-- [ ] Prefer wired Ethernet for both Arcade host and Moonlight client where possible.
+- [ ] Decide remote ArcadeVM/Moonlight vs local emulation/gaming roles after latency testing.
+- [ ] Prefer wired Ethernet for both host and Moonlight client where possible.
